@@ -1,185 +1,64 @@
 # -*- coding: utf-8 -*-
 """
-Sistema de Seguimiento Académico v1.0
+Sistema de Seguimiento Académico v2.0
 --------------------------------------
-Este programa permite a un estudiante realizar un seguimiento de sus materias universitarias
-y las notas obtenidas en cada una, calculando promedios generales y almacenando todo en memoria.
+Punto de entrada de la aplicación. Maneja el menú de usuario y la persistencia
+de datos utilizando el módulo logica.py y el archivo datos.json.
+
+Decisión de diseño:
+Este archivo se enfoca exclusivamente en la interacción con el usuario (interfaz de consola)
+y el almacenamiento persistente en disco, delegando todo el procesamiento a logica.py.
 """
 
-def agregar_materia(materias):
-    """
-    Pide al usuario los datos de una nueva materia (nombre, cuatrimestre y año) 
-    a través del input de consola y agrega un nuevo diccionario con estos datos 
-    a la lista de materias.
-    
-    Parámetro:
-    - materias (list): Lista de diccionarios donde cada uno representa una materia.
-    """
-    print("\n=== AGREGAR NUEVA MATERIA ===")
-    
-    # Solicitar el nombre de la materia, quitando espacios extra al principio y al final
-    nombre = input("Ingrese el nombre de la materia (ej. Análisis Matemático I): ").strip()
-    if not nombre:
-        print("Error: El nombre de la materia no puede estar vacío.")
-        return
+import json
+# Importamos las cuatro funciones desde el nuevo archivo logica.py
+from logica import agregar_materia, ver_materias, agregar_nota, calcular_promedio
 
-    # Solicitar el cuatrimestre con validación de tipo numérico entero
+# 2. Definir ARCHIVO_DATOS = "datos.json" como constante al principio
+ARCHIVO_DATOS = "datos.json"
+
+# 3. Función cargar_datos()
+def cargar_datos():
+    """
+    Intenta abrir ARCHIVO_DATOS y retornar json.load()
+    Si el archivo no existe (FileNotFoundError): retorna []
+    Si el archivo existe pero el JSON está malformado (json.JSONDecodeError):
+    imprime un aviso y retorna []
+    """
     try:
-        cuatrimestre = int(input("Ingrese el cuatrimestre (número entero, ej. 1 o 2): "))
-    except ValueError:
-        print("Error: El cuatrimestre debe ser un número entero.")
-        return
+        # Abrimos el archivo con codificación UTF-8 para garantizar soporte de caracteres especiales
+        with open(ARCHIVO_DATOS, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # Si el archivo no existe aún (ej. primera ejecución), retornamos una lista vacía
+        return []
+    except json.JSONDecodeError:
+        # Si la estructura JSON no es válida, advertimos al usuario y devolvemos una lista vacía
+        print(f"\n[AVISO] El archivo '{ARCHIVO_DATOS}' existe pero su formato no es válido (malformado).")
+        print("Se iniciará el sistema con una lista vacía de materias.")
+        return []
 
-    # Solicitar el año con validación de tipo numérico entero
+# 4. Función guardar_datos(materias)
+def guardar_datos(materias):
+    """
+    Escribe la lista en ARCHIVO_DATOS con json.dump(), indent=2
+    """
     try:
-        anio = int(input("Ingrese el año de cursada (número entero, ej. 2024): "))
-    except ValueError:
-        print("Error: El año debe ser un número entero.")
-        return
+        # Escribimos los datos de manera estructurada con indentación y preservando acentos/caracteres especiales
+        with open(ARCHIVO_DATOS, "w", encoding="utf-8") as f:
+            json.dump(materias, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"\n[ERROR] Ocurrió un error al intentar guardar los datos: {e}")
 
-    # Creamos la materia con la estructura de diccionario requerida
-    # Las notas se inicializan como una lista vacía
-    nueva_materia = {
-        "nombre": nombre,
-        "cuatrimestre": cuatrimestre,
-        "año": anio,
-        "notas": []
-    }
-
-    # Agregamos el diccionario a la lista principal recibida por parámetro
-    materias.append(nueva_materia)
-    print(f"\n¡La materia '{nombre}' fue registrada exitosamente!")
-
-
-def ver_materias(materias):
+# 5. El menú principal (while True)
+def menu():
     """
-    Muestra en pantalla todas las materias registradas y sus respectivas notas.
-    Si la lista está vacía, le informa al usuario para evitar pantallas en blanco.
-    
-    Parámetro:
-    - materias (list): Lista de diccionarios con la información académica.
+    Presenta la interfaz de usuario en consola, procesa las opciones y asegura
+    la persistencia de los datos al arrancar y al salir.
     """
-    print("\n=== MATERIAS REGISTRADAS ===")
+    # Al arrancar: materias = cargar_datos()
+    materias = cargar_datos()
     
-    # Validación: si no hay materias cargadas en la lista, avisamos y salimos
-    if not materias:
-        print("No hay materias registradas en el sistema todavía.")
-        print("Por favor, agregue una materia usando la opción 1 del menú.")
-        return
-
-    # Recorremos la lista y formateamos la salida para que sea legible
-    for index, materia in enumerate(materias, start=1):
-        nombre = materia["nombre"]
-        cuatrimestre = materia["cuatrimestre"]
-        anio = materia["año"]
-        notas = materia["notas"]
-        
-        # Mostramos las notas separadas por comas, o una aclaración si no hay ninguna
-        if notas:
-            notas_str = ", ".join(str(nota) for nota in notas)
-        else:
-            notas_str = "Sin notas registradas"
-            
-        print(f"{index}. {nombre}")
-        print(f"   Año: {anio} | Cuatrimestre: {cuatrimestre} | Notas: [{notas_str}]")
-        print("-" * 50)
-
-
-def agregar_nota(materias):
-    """
-    Busca una materia por su nombre en la lista y le añade una nueva nota.
-    Valida la existencia de materias, la existencia de la materia buscada 
-    y que la nota sea un número real/entero entre 1 y 10.
-    
-    Parámetro:
-    - materias (list): Lista de diccionarios con la información académica.
-    """
-    print("\n=== AGREGAR NOTA A MATERIA ===")
-    
-    # Validación: si no hay materias, no podemos agregar notas
-    if not materias:
-        print("No hay materias registradas en el sistema. Registre una materia primero.")
-        return
-
-    # Pedimos el nombre de la materia a buscar
-    busqueda = input("Ingrese el nombre de la materia: ").strip()
-    
-    # Buscamos la materia ignorando mayúsculas/minúsculas para mejorar la experiencia de usuario
-    materia_encontrada = None
-    for materia in materias:
-        if materia["nombre"].lower() == busqueda.lower():
-            materia_encontrada = materia
-            break
-
-    # Si no la encontramos, avisamos al usuario
-    if not materia_encontrada:
-        print(f"Error: No se encontró la materia '{busqueda}'. Verifique el nombre e intente de nuevo.")
-        return
-
-    # Pedimos la nota y la validamos
-    nota_input = input("Ingrese la nota obtenida (número entre 1 y 10): ").strip()
-    
-    try:
-        # Reemplazamos la coma por el punto por si el usuario ingresa un decimal como "7,5"
-        nota_filtrada = nota_input.replace(",", ".")
-        nota = float(nota_filtrada)
-        
-        # Validamos que la nota esté dentro del rango académico permitido (1 a 10)
-        if 1 <= nota <= 10:
-            # Si el número es decimal pero equivale a un entero (ej: 8.0), lo convertimos a entero para estética
-            if nota.is_integer():
-                nota = int(nota)
-                
-            # Agregamos la nota a la lista de notas de la materia seleccionada
-            materia_encontrada["notas"].append(nota)
-            print(f"\n¡Nota {nota} agregada con éxito a '{materia_encontrada['nombre']}'!")
-        else:
-            print("Error: La nota debe ser un número entre 1 y 10.")
-    except ValueError:
-        print("Error: El valor ingresado no es un número válido.")
-
-
-def calcular_promedio(materias):
-    """
-    Suma todas las notas cargadas en todas las materias y calcula el promedio
-    general de la carrera. Valida si hay materias o si hay notas registradas.
-    
-    Parámetro:
-    - materias (list): Lista de diccionarios con la información académica.
-    """
-    print("\n=== CALCULAR PROMEDIO GENERAL ===")
-    
-    # Validación: si no hay materias, no hay promedio que calcular
-    if not materias:
-        print("No hay materias registradas en el sistema. Agregue materias para calcular el promedio.")
-        return
-
-    # Recolectamos todas las notas de todas las materias en una sola lista
-    todas_las_notas = []
-    for materia in materias:
-        todas_las_notas.extend(materia["notas"])
-
-    # Validación: si hay materias pero ninguna tiene notas, no podemos dividir por cero
-    if not todas_las_notas:
-        print("No se encontraron notas registradas en ninguna de las materias.")
-        print("Agregue notas primero usando la opción 3 del menú.")
-        return
-
-    # Calculamos el promedio general sumando todo y dividiendo por la cantidad
-    promedio = sum(todas_las_notas) / len(todas_las_notas)
-    
-    print(f"Total de notas evaluadas: {len(todas_las_notas)}")
-    print(f"Promedio general actual: {promedio:.2f}")
-
-
-def menu(materias):
-    """
-    Función del bucle principal del programa que muestra las opciones en consola,
-    lee la selección del usuario y ejecuta la función correspondiente.
-    
-    Parámetro:
-    - materias (list): Lista de diccionarios con la información académica.
-    """
     while True:
         print("\n==================================================")
         print("       SISTEMA DE SEGUIMIENTO ACADÉMICO")
@@ -203,6 +82,8 @@ def menu(materias):
         elif opcion == "4":
             calcular_promedio(materias)
         elif opcion == "5":
+            # Al elegir la opción "salir": guardar_datos(materias) y luego break
+            guardar_datos(materias)
             print("\n¡Gracias por utilizar el Sistema de Seguimiento Académico!")
             print("Mucho éxito en tu carrera de Estadística y Ciencia de Datos.")
             print("¡Hasta luego!\n")
@@ -211,11 +92,6 @@ def menu(materias):
             # Validación de opción inválida
             print("\nOpción inválida. Por favor, ingrese un número del 1 al 5.")
 
-
-# Bloque de inicio del programa
+# 6. Bloque if __name__ == "__main__"
 if __name__ == "__main__":
-    # Inicializamos la lista vacía que guardará los datos en memoria mientras dure la ejecución
-    registro_materias = []
-    
-    # Arrancamos el menú interactivo pasándole la lista vacía
-    menu(registro_materias)
+    menu()

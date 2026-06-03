@@ -1,0 +1,32 @@
+[
+  {
+    "nombre": "Análisis Matemático I",
+    "cuatrimestre": 1,
+    "año": 2025,
+    "notas": [
+      8,
+      7.5,
+      9
+    ]
+  },
+  {
+    "nombre": "Álgebra Lineal",
+    "cuatrimestre": 2,
+    "año": 2025,
+    "notas": [
+      7,
+      8,
+      10
+    ]
+  },
+  {
+    "nombre": "Programacion Inicial",
+    "cuatrimestre": 1,
+    "año": 2026,
+    "notas": [
+      8,
+      4,
+      6
+    ]
+  }
+]
