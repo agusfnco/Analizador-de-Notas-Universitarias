@@ -16,7 +16,6 @@
     "notas": [
       7,
       8,
-      10,
       9
     ]
   },
@@ -35,6 +34,8 @@
     "nombre": "Introduccion a los Sistemas de Informacion",
     "cuatrimestre": 1,
     "año": 2026,
-    "notas": []
+    "notas": [
+      8
+    ]
   }
 ]

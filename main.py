@@ -60,7 +60,7 @@ def main():
     
     # 2. Inicializar la interfaz de Tkinter
     root = tk.Tk()
-    app = AcademicTrackerGUI(root, materias)
+    app = AcademicTrackerGUI(root, materias, guardar_callback=lambda: guardar_datos(materias))
     
     # 3. Guardar datos automáticamente cuando se cierra la ventana
     def al_cerrar():
